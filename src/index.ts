@@ -39,6 +39,15 @@ function mcmanus(options: mineflayer.BotOptions): Promise<void> {
         case "echo":
           bot.chat(command.slice(2).join(" "));
           break;
+        case "rejoin":
+          const timeout = command.length >= 3 ? parseInt(command[2]) : 5;
+          bot.chat("Roger! rejoining in " + timeout + " seconds");
+          setTimeout(() => {
+            bot.end();
+            console.log("rejoining in " + timeout + "s");
+            setTimeout(() => resolve(mcmanus(options)), timeout * 1000);
+          }, 100);
+          break;
         case "help":
           bot.chat("coords | echo | help");
           break;
