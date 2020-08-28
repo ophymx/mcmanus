@@ -1,7 +1,9 @@
 import * as mineflayer from 'mineflayer';
 import { promises } from 'fs';
-import * as mcrealms from './mcrealms';
 import { exit } from 'process';
+
+import * as mcrealms from './mcrealms';
+import promiseRetry from './retry';
 
 interface LoginDetails {
   host?: string
@@ -45,14 +47,14 @@ function mcmanus(options: mineflayer.BotOptions): Promise<void> {
           break;
       }
     });
-  
+
     bot.on('login', () => console.log('logged in'));
-  
+
     bot.on('kicked', (reason, loggedIn) => {
       console.log(reason, loggedIn)
       reject(reason);
     });
-  
+
     bot.on('error', err => {
       console.log(err);
       reject(err);
@@ -66,20 +68,24 @@ promises.readFile('mcmanus.json')
   .then((login) => {
     if (login.realm) {
       return mcrealms.login(login.username, login.password)
-      .then((client) => client.worlds()
-        .then((worlds) => {
-          const server = worlds.servers.find(server => server.name === login.realm)
-          if (server) {
-            return client.join(server.id);
-          }
-          return Promise.reject('realm not found');
-        })
-        .then((joinInfo) => {
-          const address = joinInfo.address.split(':')
-          login.host = address[0]
-          login.port = parseInt(address[1])
-          return login;
-        }))
+        .then((client) => client.worlds()
+          .then((worlds) => {
+            const server = worlds.servers.find(server => server.name === login.realm)
+            if (server) {
+              return promiseRetry(() => client.join(server.id), 20, 5000,
+                (reason) => {
+                  console.log(reason);
+                  return reason === 'Retry again later'
+                });
+            }
+            return Promise.reject('realm not found');
+          })
+          .then((joinInfo) => {
+            const address = joinInfo.address.split(':')
+            login.host = address[0]
+            login.port = parseInt(address[1])
+            return login;
+          }))
     }
     return login;
   })

@@ -44,6 +44,9 @@ interface WorldsResponse {
 }
 
 interface JoinResponse {
+  /**
+   * IPADDRESS:PORT
+   */
   address: string
   pendingUpdate: boolean
 }
@@ -84,11 +87,17 @@ export class RealmsClient {
       .then((resp) => JSON.parse(resp));
   }
 
+  /**
+   * Check if realms is available.
+   */
   public available(): Promise<boolean> {
     return this.getText('/mco/available')
       .then((body) => body.trim() === 'true');
   }
 
+  /**
+   * Check if client is compatible with realms, based on version in cookie.
+   */
   public compatible(): Promise<"OUTDATED" | "OTHER" | "COMPATIBLE"> {
     return this.getText('/mco/client/compatible')
       .then((body) => {
@@ -106,15 +115,33 @@ export class RealmsClient {
       })
   }
 
+  /**
+   * Return a list of worlds user has access to.
+   */
   public worlds(): Promise<WorldsResponse> {
     return this.getJSON('/worlds');
   }
 
+  /**
+   * Join a world.
+   *
+   * Join will return an object with a server address to connect to.
+   * If the server has been spun down, the message 'Retry again later' will
+   * be returned. Clients should retry until server instance has booted.
+   *
+   * @param id World id.
+   */
   public join(id: number): Promise<JoinResponse> {
     return this.getJSON('/worlds/v1/' + id + '/join/pc');
   }
 }
 
+/**
+ * Authenticate with Minecraft authenticator and return a realms client.
+ *
+ * @param username email address used to log in
+ * @param password login password
+ */
 export function login(username: string, password: string): Promise<RealmsClient> {
   const data = {
     method: 'POST',
@@ -133,7 +160,7 @@ export function login(username: string, password: string): Promise<RealmsClient>
   }
   return fetch(AUTH_SERVER + '/authenticate', data).then((resp) => {
     if (resp.status != 200) {
-      return resp.json().then((body) => Promise.reject(body));
+      return resp.text().then((body) => Promise.reject(body));
     }
     return resp.json();
   }).then((resp: AuthResponse): RealmsClient => {
