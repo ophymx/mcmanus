@@ -39,6 +39,10 @@ function mcmanus(options: mineflayer.BotOptions): Promise<void> {
         case "echo":
           bot.chat(command.slice(2).join(" "));
           break;
+        case "begone":
+          bot.chat("Right sir! You won't hear from me again.");
+          setTimeout(() => resolve(bot.end()), 100);
+          break;
         case "rejoin":
           const timeout = command.length >= 3 ? parseInt(command[2]) : 5;
           bot.chat("Roger! rejoining in " + timeout + " seconds");
@@ -58,6 +62,8 @@ function mcmanus(options: mineflayer.BotOptions): Promise<void> {
     });
 
     bot.on('login', () => console.log('logged in'));
+
+    bot.on('end', () => console.log("logging off"));
 
     bot.on('kicked', (reason, loggedIn) => {
       console.log(reason, loggedIn)
@@ -107,5 +113,5 @@ promises.readFile('mcmanus.json')
   })
   .catch((reason) => {
     console.log(reason)
-    exit();
-  });
+  })
+  .finally(() => exit());
