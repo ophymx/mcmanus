@@ -1,7 +1,9 @@
 import * as mineflayer from 'mineflayer';
 import { promises } from 'fs';
-import * as mcrealms from './mcrealms';
 import { exit } from 'process';
+
+import * as mcrealms from './mcrealms';
+import promiseRetry from './retry';
 
 interface LoginDetails {
   host?: string
@@ -37,6 +39,19 @@ function mcmanus(options: mineflayer.BotOptions): Promise<void> {
         case "echo":
           bot.chat(command.slice(2).join(" "));
           break;
+        case "begone":
+          bot.chat("Right sir! You won't hear from me again.");
+          setTimeout(() => resolve(bot.end()), 100);
+          break;
+        case "rejoin":
+          const timeout = command.length >= 3 ? parseInt(command[2]) : 5;
+          bot.chat("Roger! rejoining in " + timeout + " seconds");
+          setTimeout(() => {
+            bot.end();
+            console.log("rejoining in " + timeout + "s");
+            setTimeout(() => resolve(mcmanus(options)), timeout * 1000);
+          }, 100);
+          break;
         case "help":
           bot.chat("coords | echo | help");
           break;
@@ -45,14 +60,16 @@ function mcmanus(options: mineflayer.BotOptions): Promise<void> {
           break;
       }
     });
-  
+
     bot.on('login', () => console.log('logged in'));
-  
+
+    bot.on('end', () => console.log("logging off"));
+
     bot.on('kicked', (reason, loggedIn) => {
       console.log(reason, loggedIn)
       reject(reason);
     });
-  
+
     bot.on('error', err => {
       console.log(err);
       reject(err);
@@ -64,24 +81,28 @@ function mcmanus(options: mineflayer.BotOptions): Promise<void> {
 promises.readFile('mcmanus.json')
   .then((buffer) => JSON.parse(buffer.toString()))
   .then((login) => {
-    if (login.realm) {
-      return mcrealms.login(login.username, login.password)
+    if (!login.realm) {
+      return login;
+    }
+    return mcrealms.login(login.username, login.password)
       .then((client) => client.worlds()
         .then((worlds) => {
           const server = worlds.servers.find(server => server.name === login.realm)
-          if (server) {
-            return client.join(server.id);
+          if (!server) {
+            return Promise.reject('realm not found');
           }
-          return Promise.reject('realm not found');
+          return promiseRetry(() => client.join(server.id), 20, 5000,
+            (reason) => {
+              console.log(reason);
+              return reason === 'Retry again later'
+            });
         })
         .then((joinInfo) => {
           const address = joinInfo.address.split(':')
           login.host = address[0]
           login.port = parseInt(address[1])
           return login;
-        }))
-    }
-    return login;
+        }));
   })
   .then((login) => {
     console.log("joining", {
@@ -92,5 +113,5 @@ promises.readFile('mcmanus.json')
   })
   .catch((reason) => {
     console.log(reason)
-    exit();
-  });
+  })
+  .finally(() => exit());
