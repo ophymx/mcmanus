@@ -81,28 +81,28 @@ function mcmanus(options: mineflayer.BotOptions): Promise<void> {
 promises.readFile('mcmanus.json')
   .then((buffer) => JSON.parse(buffer.toString()))
   .then((login) => {
-    if (login.realm) {
-      return mcrealms.login(login.username, login.password)
-        .then((client) => client.worlds()
-          .then((worlds) => {
-            const server = worlds.servers.find(server => server.name === login.realm)
-            if (server) {
-              return promiseRetry(() => client.join(server.id), 20, 5000,
-                (reason) => {
-                  console.log(reason);
-                  return reason === 'Retry again later'
-                });
-            }
-            return Promise.reject('realm not found');
-          })
-          .then((joinInfo) => {
-            const address = joinInfo.address.split(':')
-            login.host = address[0]
-            login.port = parseInt(address[1])
-            return login;
-          }))
+    if (!login.realm) {
+      return login;
     }
-    return login;
+    return mcrealms.login(login.username, login.password)
+      .then((client) => client.worlds()
+        .then((worlds) => {
+          const server = worlds.servers.find(server => server.name === login.realm)
+          if (!server) {
+            return Promise.reject('realm not found');
+          }
+          return promiseRetry(() => client.join(server.id), 20, 5000,
+            (reason) => {
+              console.log(reason);
+              return reason === 'Retry again later'
+            });
+        })
+        .then((joinInfo) => {
+          const address = joinInfo.address.split(':')
+          login.host = address[0]
+          login.port = parseInt(address[1])
+          return login;
+        }));
   })
   .then((login) => {
     console.log("joining", {
