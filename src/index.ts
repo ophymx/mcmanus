@@ -1,9 +1,9 @@
 import * as mineflayer from 'mineflayer';
-import { promises } from 'fs';
+import { promises as fspromises } from 'fs';
 import { exit } from 'process';
 
 import * as mcrealms from './mcrealms';
-import promiseRetry from './retry';
+import * as promises from './promises';
 
 interface LoginDetails {
   host?: string
@@ -41,16 +41,19 @@ function mcmanus(options: mineflayer.BotOptions): Promise<void> {
           break;
         case "begone":
           bot.chat("Right sir! You won't hear from me again.");
-          setTimeout(() => resolve(bot.end()), 100);
+          promises.delay(100)
+            .then(() => resolve(bot.end()));
           break;
         case "rejoin":
           const timeout = command.length >= 3 ? parseInt(command[2]) : 5;
           bot.chat("Roger! rejoining in " + timeout + " seconds");
-          setTimeout(() => {
-            bot.end();
-            console.log("rejoining in " + timeout + "s");
-            setTimeout(() => resolve(mcmanus(options)), timeout * 1000);
-          }, 100);
+          promises.delay(100)
+            .then(() => {
+              bot.end();
+              console.log("rejoining in " + timeout + "s");
+            })
+            .then(promises.delayValue(timeout * 1000))
+            .then(() => resolve(mcmanus(options)));
           break;
         case "help":
           bot.chat("coords | echo | help");
@@ -78,7 +81,7 @@ function mcmanus(options: mineflayer.BotOptions): Promise<void> {
 
 }
 
-promises.readFile('mcmanus.json')
+fspromises.readFile('mcmanus.json')
   .then((buffer) => JSON.parse(buffer.toString()))
   .then((login) => {
     if (!login.realm) {
@@ -91,7 +94,7 @@ promises.readFile('mcmanus.json')
           if (!server) {
             return Promise.reject('realm not found');
           }
-          return promiseRetry(() => client.join(server.id), 20, 5000,
+          return promises.retry(() => client.join(server.id), 20, 5000,
             (reason) => {
               console.log(reason);
               return reason === 'Retry again later'
