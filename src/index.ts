@@ -2,6 +2,7 @@ import * as mineflayer from 'mineflayer';
 import { promises as fspromises } from 'fs';
 import { exit } from 'process';
 
+import * as calendar from './calendar';
 import * as mcrealms from './mcrealms';
 import * as promises from './promises';
 
@@ -57,6 +58,11 @@ function mcmanus(options: mineflayer.BotOptions): Promise<void> {
           break;
         case "help":
           bot.chat("coords | echo | help");
+          break;
+        case "time":
+          const datetime = new calendar.Datetime(bot.time);
+          console.log(JSON.stringify(datetime));
+          bot.chat("the time is: " + datetime);
           break;
         default:
           bot.chat("wat? " + message);
