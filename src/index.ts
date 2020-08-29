@@ -83,7 +83,7 @@ function mcmanus(options: mineflayer.BotOptions): Promise<void> {
 
 fspromises.readFile('mcmanus.json')
   .then((buffer) => JSON.parse(buffer.toString()))
-  .then((login) => {
+  .then((login: LoginDetails) => {
     if (!login.realm) {
       return login;
     }
