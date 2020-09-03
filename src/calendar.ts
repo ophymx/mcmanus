@@ -95,7 +95,6 @@ export class Datetime {
   dayOfWeek: number
   hour: number
   minute: number
-  second: number
 
   constructor(time: mineflayer.Time) {
     this.tick = time.time
@@ -108,11 +107,10 @@ export class Datetime {
     this.dayOfWeek = day % DAYS_IN_WEEK;
     this.hour = Math.floor(timeOfDay / TICKS_PER_HOUR);
     this.minute = Math.floor(timeOfDay / TICKS_PER_MINUTE) % 60;
-    this.second = Math.floor(timeOfDay / TICKS_PER_SECOND);
   }
 
   public toString(): string {
     return zp(this.year) + '/' + zp(this.month) + '/' + zp(this.dayOfMonth) +
-      ' ' + zp(this.hour) + ':' + zp(this.minute) + ':' + zp(this.second);
+      ' ' + zp(this.hour) + ':' + zp(this.minute);
   }
 }
