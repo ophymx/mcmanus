@@ -1,3 +1,7 @@
 /mcmanus.json
 /node_modules/
 /dist/
+/.vscode/
+*~
+*.swp
+*.swo
