@@ -1,10 +1,17 @@
 import * as mineflayer from 'mineflayer';
 import { promises as fspromises } from 'fs';
 import { exit } from 'process';
+import { Vec3 } from 'vec3';
 
 import * as calendar from './calendar';
 import * as mcrealms from './mcrealms';
 import * as promises from './promises';
+
+function random(min: number, max: number): number {
+  min = Math.floor(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * Math.floor(max - min)) + min;
+}
 
 interface LoginDetails {
   host?: string
@@ -21,6 +28,8 @@ function mcmanus(options: mineflayer.BotOptions): Promise<void> {
   const bot = mineflayer.createBot(options);
 
   return new Promise((resolve, reject) => {
+    let wander = false;
+
     bot.on('chat', (username: string, message: string, translate: string, jsonMsg: string, matches: string[]): void => {
       if (username == bot.username) {
         return;
@@ -63,6 +72,28 @@ function mcmanus(options: mineflayer.BotOptions): Promise<void> {
           const datetime = new calendar.Datetime(bot.time);
           console.log(JSON.stringify(datetime));
           bot.chat("the time is: " + datetime);
+          break;
+        case "wander":
+          wander = true;
+          const chestBlock = bot.findBlock({
+            point: new Vec3(12, 128, 6),
+            matching: (block) => block.name === 'chest',
+            maxDistance: 7,
+          });
+          const wanderFunc = () => {
+            setTimeout(() => {
+              if (!wander) {
+                return;
+              }
+              const chest = bot.openChest(chestBlock);
+              chest.once('open', () => chest.close());
+              wanderFunc();
+            }, random(1000, 5000));
+          }
+          wanderFunc();
+          break;
+        case "stop":
+          wander = false;
           break;
         default:
           bot.chat("wat? " + message);
