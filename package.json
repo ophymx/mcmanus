@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "build": "webpack --config ./webpack.config.js",
-    "start": "DEUBG=* node dist/mcmanus.js",
+    "start": "node dist/mcmanus.js",
+    "buildStart": "npm run build && npm run start",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Jeffrey T. Peckham <abic@ophymx.com>",
