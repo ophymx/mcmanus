@@ -2,16 +2,28 @@ import * as mineflayer from 'mineflayer';
 import { promises as fspromises } from 'fs';
 import { exit } from 'process';
 
+import { pathfinder } from 'mineflayer-pathfinder';
+
+import { BotStateMachine, EntityFilters } from 'mineflayer-statemachine';
+
 import * as calendar from './calendar';
 import * as mcrealms from './mcrealms';
 import * as promises from './promises';
 
 interface LoginDetails {
-  host?: string
-  port?: number
-  realm?: string
-  username: string
-  password: string
+  host?: string;
+  port?: number;
+  realm?: string;
+  username: string;
+  password: string;
+}
+
+interface Location {
+  name: string;
+  desc: string;
+  x: number;
+  y: number;
+  z: number;
 }
 
 async function mcmanus(options: mineflayer.BotOptions): Promise<void> {
@@ -19,6 +31,7 @@ async function mcmanus(options: mineflayer.BotOptions): Promise<void> {
   options.version = mcrealms.MC_VERSION;
 
   const bot = mineflayer.createBot(options);
+  bot.loadPlugin(pathfinder);
 
   return new Promise((resolve, reject) => {
     bot.on('chat', (username: string, message: string, translate: string, jsonMsg: string, matches: string[]): void => {
@@ -75,7 +88,7 @@ async function mcmanus(options: mineflayer.BotOptions): Promise<void> {
     bot.on('end', () => console.log("logging off"));
 
     bot.on('kicked', (reason, loggedIn) => {
-      console.log(reason, loggedIn)
+      console.log(reason, loggedIn);
       reject(reason);
     });
 
@@ -113,9 +126,9 @@ async function joinRealm(username: string, password: string, realm: string): Pro
   const joinInfo = await promises.retry(() => client.join(server.id), 20, 5000,
     (reason) => {
       console.log(reason);
-      return reason === 'Retry again later'
+      return reason === 'Retry again later';
     });
-  const address = joinInfo.address.split(':')
+  const address = joinInfo.address.split(':');
   return [address[0], parseInt(address[1])];
 }
 

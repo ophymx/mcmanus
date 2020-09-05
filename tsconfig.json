@@ -1,5 +1,11 @@
 {
   "compilerOptions": {
     "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "mineflayer-pathfinder": [
+        "types/mineflayer-pathfinder.d.ts"
+      ]
+    }
   }
 }
