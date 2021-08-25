@@ -1,4 +1,5 @@
 import * as mineflayer from 'mineflayer';
+import { ChatMessage } from 'prismarine-chat';
 import { promises as fspromises } from 'fs';
 import { exit } from 'process';
 
@@ -34,7 +35,7 @@ async function mcmanus(options: mineflayer.BotOptions): Promise<void> {
   bot.loadPlugin(pathfinder);
 
   return new Promise((resolve, reject) => {
-    bot.on('chat', (username: string, message: string, translate: string, jsonMsg: string, matches: string[]): void => {
+    bot.on('chat', (username: string, message: string, translate: string | null, jsonMsg: ChatMessage, matches: string[] | null): void => {
       if (username == bot.username) {
         return;
       }
